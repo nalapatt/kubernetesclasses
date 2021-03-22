@@ -1,0 +1,259 @@
+ kubectl explain pod
+ 1271  kubectl explain service
+--
+Task
+Deploy a pod https://hub.docker.com/r/pengbai/docker-supermario and deploy svc 
+
+---
+
+kubectl create namespace ibm
+ 1275  kubectl create deployment mydep1 --image=docker.io/pengbai/docker-supermario -n ibm
+ 1276  kubectl get pods 
+ 1277  kubectl get pods -n ibm
+ 1278  kubectl get pods -n ibm -w
+ 1279  kubectl expose deployment mydep1 --port=8080 -n ibm
+ 1280  kubectl get svc -n ibm
+
+--
+ kubectl create deployment mydb --image=docker.io/mysql:5.6 --dry-run -o yaml > mydb.yml
+ 1285  kubectl get deployment
+ 1287  vi mydb.yml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mydb
+  name: mydb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mydb
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mydb
+    spec:
+      containers:
+      - image: docker.io/mysql:5.6
+        name: mysql
+        env: 
+        - name: MYSQL_ROOT_PASSWORD
+          value: centos
+        resources: {}
+status: {}
+
+ 1288  kubectl create -f mydb.yml 
+ 1289  kubectl get pods 
+
+kubectl exec -it mydb-85d4c4457f-qzlwh bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@mydb-85d4c4457f-qzlwh:/# mysql -uroot -pcentos
+--
+Task
+Deploy postgres image -> https://hub.docker.com/_/postgres using the above scenario 
+--
+
+
+kubectl create deployment mario1 --image=docker.io/pengbai/docker-supermario
+    3  kubectl expose deployment mario1 --port=8080
+    4  kubectl edit deployment mario1 
+    5  kubectl get svc mario1 
+    6  kubectl edit svc mario1 
+    8  kubectl get svc
+---
+Task
+Deploy docker.io/httpd with NodePort
+Deploy docker.io/openshift/hello-openshift with NodePort 
+--
+
+
+ vi mydb.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mydb
+  name: mydb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mydb
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mydb
+    spec:
+      containers:
+      - image: docker.io/mysql:5.6
+        name: mysql
+        env: 
+        - name: MYSQL_ROOT_PASSWORD
+          value: centos
+        resources: {}
+status: {}
+
+   23  kubectl create -f mydb.yml 
+   24  kubectl get pods 
+   26  kubectl expose deployment mydb --port=3306
+   27  kubectl get svc
+   34  kubectl create deployment wp --image=docker.io/wordpress --dry-run=client -o yaml > wp.yml
+   35  vi wp.yml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: wp
+  name: wp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: wp
+    spec:
+      containers:
+      - image: docker.io/wordpress
+        name: wordpress
+        env: 
+        - name: WORDPRESS_DB_HOST
+          value: mydb
+        - name: WORDPRESS_DB_PASSWORD
+          value: centos
+        resources: {}
+status: {}
+
+   38  kubectl create -f wp.yml 
+   39  kubectl expose deployment wp --port=80 --type=NodePort 
+   40  kubectl get svc
+   41  kubectl get pods 
+   42  kubectl logs wp-5bd4f4fb5b-kpmhx
+====
+
+Multi-tier 
+Ref : https://github.com/dockersamples/example-voting-app 
+
+--
+
+Gogs
+kubectl delete deployments --all
+ kubectl delete svc --all
+
+---
+vi mydb.yml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mydb
+  name: mydb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mydb
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mydb
+    spec:
+      containers:
+      - image: docker.io/mysql:5.6
+        name: mysql
+        env: 
+        - name: MYSQL_ROOT_PASSWORD
+          value: centos
+        - name: MYSQL_DATABASE
+          value: gogs
+        resources: {}
+status: {}
+
+    6  kubectl create -f mydb.yml 
+    7  kubectl expose deployment mydb --port=3306
+    8  kubectl get svc
+    9  kubectl create deployment gogs --image=gogs/gogs
+   10  kubectl expose deployment gogs --port=3000 --type=NodePort
+   11  kubectl get svc
+   12  kubectl get pods 
+   13  kubectl exec -it mydb-7bf759df98-692xp bash
+14 mysql -uroot -pcentos
+
+15 set global innodb_large_prefix=on;
+16 set global innodb_file_format=Barracuda;
+17 exit
+
+   18  kubectl get svc
+---
+
+
+
+Extra’s
+sudo docker run --name=test -m=512M -d httpd
+
+    4  sudo docker stats
+--
+
+
+vi node.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: httpd
+    imagePullPolicy: IfNotPresent
+  nodeName: ip-172-31-42-34
+
+    9  kubectl create -f node.yml 
+
+   11  kubectl get pods -o wide
+--
+Task
+Try nodeName in deployment as above. 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dep01
+  name: dep01
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dep01
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: dep01
+    spec:
+      containers:
+      - image: docker.io/httpd
+        name: httpd
+        resources: {}
+      nodeName: ip-172-31-1-128 
+       
+status: {}
