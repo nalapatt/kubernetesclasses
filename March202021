@@ -1,0 +1,143 @@
+
+sudo kubeadm reset (on each node)
+
+---
+sudo kubeadm init 
+ 1220  mkdir -p $HOME/.kube
+ 1221  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+ 1222  kubectl get nodes  
+-
+
+On each node (slaves)
+Copy the kubeadm join command with sudo 
+
+---
+TO print the join command again 
+
+ sudo kubeadm token create --print-join-command
+
+---
+ kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+
+kubectl get pods -n kube-system 
+
+--
+vi pod.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: apache3
+  labels:
+    mycka: simplilearn
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/httpd
+    ports:
+    - containerPort: 80
+
+---
+
+ kubectl create -f pod.yml 
+    4  kubectl get pods 
+    5  kubectl get pods -o wide
+    6  curl 10.32.0.2
+
+---
+Task
+Create a pod of docker.io/openshift/hello-openshift (use different labels) 
+---
+
+
+ kubectl get pods --show-labels
+
+vi svc.yml
+kind: Service
+apiVersion: v1
+metadata:
+  name: myservice
+spec:
+  selector: 
+      mycka: simplilearn  
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 80
+--
+
+  160  cat svc.yml 
+  161  kubectl create -f svc.yml 
+  162  vi svc.yml 
+  163  kubectl create -f svc.yml 
+  164  kubectl get svc
+  165  curl 10.96.67.71:8081
+  166  kubectl describe svc myservice
+---
+
+
+labsuser@ip-172-31-26-17:~$ kubectl exec -it apache2 bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@apache2:/usr/local/apache2# echo "hello from pod" >> htdocs/index.html 
+root@apache2:/usr/local/apache2# exit
+---
+
+
+Etcd
+  kubectl get pods -n kube-system
+  290  cd /etc/kubernetes/manifests/
+  291  ls
+  292  cat etcd.yaml 
+  293  sudo cat etcd.yaml 
+
+---
+
+ kubectl create deployment mydep1 --image=docker.io/httpd
+  290  kubectl get pods 
+  291  kubectl delete pod mydep1-6b7cfdd955-p5qnr
+  292  kubectl get pods 
+  294  kubectl scale deployment mydep1 --replicas=4
+  295  kubectl get pods 
+  296  kubectl delete deployment mydep1
+  297  kubectl get pods 
+--
+  kubectl expose deployment mydep1 --port=80
+  302  kubectl get svc
+  303  kubectl describe svc mydep1
+-
+
+---
+  kubectl get deployment --show-labels
+kubectl delete all -l app=mydep1
+  309  kubectl create deployment test --image=docker.io/httpd
+  310  kubectl get rs
+  312  vi rs.yml 
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: gcr.io/google_samples/gb-frontend:v3
+
+  314  kubectl create -f rs.yml 
+  315  kubectl get pods 
+  316  kubectl edit rs frontend
+  317  kubectl get pods 
+  318  kubectl edit deployment test
+  319  kubectl get pods 
+--
